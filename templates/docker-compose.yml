@@ -1,0 +1,11 @@
+###########################################################################
+# Docker Compose File
+###########################################################################
+#
+# Your Docker Compose file spins up your application's environment.
+# It defines all of the services, network links and volumes to
+# be used by your application. Modify this file as required.
+#
+
+version: '3'
+{{{yaml this}}}

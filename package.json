@@ -1,0 +1,67 @@
+{
+  "name": "ahoy",
+  "description": "Simple Docker development environments",
+  "version": "1.0.1",
+  "author": "benmag @benmagg",
+  "bin": {
+    "ahoy": "./bin/run"
+  },
+  "bugs": "https://github.com/codemasonhq/ahoy-cli/issues",
+  "dependencies": {
+    "@oclif/command": "^1",
+    "@oclif/config": "^1",
+    "@oclif/plugin-help": "^2",
+    "@oclif/plugin-plugins": "^1.7.9",
+    "@oclif/plugin-warn-if-update-available": "^1.7.0",
+    "chalk": "^3.0.0",
+    "cli-ux": "^5.4.1",
+    "download-git-repo": "^3.0.2",
+    "fs-extra": "^8.1.0",
+    "handlebars": "^4.6.0",
+    "inquirer": "^7.0.3",
+    "js-yaml": "^3.13.1",
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "^1",
+    "@oclif/test": "^1",
+    "chai": "^4",
+    "eslint": "^5.13",
+    "eslint-config-oclif": "^3.1",
+    "globby": "^10",
+    "mocha": "^5",
+    "nyc": "^14"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "/src"
+  ],
+  "homepage": "https://github.com/codemasonhq/ahoy",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "src/index.js",
+  "oclif": {
+    "commands": "./src/commands",
+    "bin": "ahoy",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins",
+      "@oclif/plugin-warn-if-update-available"
+    ]
+  },
+  "repository": "codemasonhq/ahoy",
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json",
+    "posttest": "eslint .",
+    "prepack": "oclif-dev manifest && oclif-dev readme",
+    "test": "nyc mocha --forbid-only \"test/**/*.test.js\"",
+    "version": "oclif-dev readme && git add README.md"
+  }
+}
