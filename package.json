@@ -17,6 +17,7 @@
     "cli-ux": "^5.4.1",
     "download-git-repo": "^3.0.2",
     "fs-extra": "^8.1.0",
+    "haikunator": "^2.1.2",
     "handlebars": "^4.6.0",
     "inquirer": "^7.0.3",
     "js-yaml": "^3.13.1",

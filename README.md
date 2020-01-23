@@ -35,6 +35,7 @@ USAGE
 * [`ahoy plugins:link PLUGIN`](#ahoy-pluginslink-plugin)
 * [`ahoy plugins:uninstall PLUGIN...`](#ahoy-pluginsuninstall-plugin)
 * [`ahoy plugins:update`](#ahoy-pluginsupdate)
+* [`ahoy secure`](#ahoy-secure)
 
 ## `ahoy help [COMMAND]`
 
@@ -65,6 +66,7 @@ ARGUMENTS
   PACK  language pack to use
 
 OPTIONS
+  -o, --options    choose from available services to import
   -w, --with=with  specify services to import from the language pack
 ```
 
@@ -187,4 +189,21 @@ OPTIONS
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.9/src/commands/plugins/update.ts)_
 
+## `ahoy secure`
+
+Describe the command here
+
+```
+USAGE
+  $ ahoy secure
+
+OPTIONS
+  -n, --name=name  name to print
+
+DESCRIPTION
+  ...
+  Extra documentation goes here
+```
+
+_See code: [src/commands/secure.js](https://github.com/codemasonhq/ahoy/blob/v1.0.1/src/commands/secure.js)_
 <!-- commandsstop -->
