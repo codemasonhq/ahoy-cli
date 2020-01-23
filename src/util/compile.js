@@ -27,6 +27,23 @@ exports.compileDockerCompose = async function (services, templateFile) {
 }
 
 /**
+ * Compile the certificate config file
+ */
+exports.compileCertificateConfig = async function (domain, templateFile) {
+  // Get Dockerfile template
+  const source = this.getTemplateFile(templateFile || path.resolve(__dirname, '../../templates/openssl.conf'))
+
+  // Prep the handlebars template
+  const template = Handlebars.compile(source)
+
+  // Replacement data for handlebars
+  const context = {domain: domain}
+
+  // Compile
+  return template(context)
+}
+
+/**
  * Grab template file
  */
 exports.getTemplateFile = function (templateFile) {
