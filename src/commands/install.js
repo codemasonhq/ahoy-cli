@@ -97,7 +97,7 @@ class InstallCommand extends Command {
     try {
       return yaml.safeLoad(fs.readFileSync(path.join(packPath, 'ahoy.yml'), 'utf8'))
     } catch (error) {
-      this.error('Something went wrong Could not load language pack.')
+      this.error('Something went wrong. Could not load language pack.')
     }
   }
 
