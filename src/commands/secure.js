@@ -129,7 +129,7 @@ class SecureCommand extends Command {
       -subj "/C=/ST=/O=/localityName=/commonName=${domain}/organizationalUnitName=/emailAddress=${domain}@${this.rootDomain}/" \
       -config "${configPath}"`)
 
-    let caSerialParam = `-CAserial = '${this.caSrlPath}'`
+    let caSerialParam = `-CAserial '${this.caSrlPath}'`
     if (fs.existsSync(this.caSrlPath)) {
       caSerialParam += ' -CAcreateserial'
     }
@@ -138,7 +138,7 @@ class SecureCommand extends Command {
     this.runCommand(`openssl x509 -req -sha256 -days 730 \
       -CA "${this.caPemPath}" \
       -CAkey "${this.caKeyPath}" \
-      ${caSerialParam}
+      ${caSerialParam} \
       -in "${csrPath}" \
       -out "${crtPath}" \
       -extensions v3_req -extfile "${configPath}"`)
@@ -172,9 +172,9 @@ class SecureCommand extends Command {
     compose = this.addVirtualHostToService(compose, service, domain)
     cli.action.stop()
 
-    // Remove ports (replaced by nginx proxy)
-    cli.action.start(chalk.grey('  Cleaning up ports'))
-    compose = this.removePortsFromService(compose, service)
+    // Remove any conflicting ports (replaced by nginx proxy)
+    cli.action.start(chalk.grey('  Cleaning up conflicting ports'))
+    compose = this.removeConflictingPortsFromService(compose, service)
     cli.action.stop()
 
     // Prepare the docker-compose.yml file
@@ -240,19 +240,19 @@ class SecureCommand extends Command {
   }
 
   /**
-   * Removes any ports from the service and stores them as a label
+   * Removes any conflicting ports from the service and stores them as a label
    *
    * @param compose
    * @param service
    */
-  removePortsFromService(compose, service) {
+  removeConflictingPortsFromService(compose, service) {
     let ports = _.get(compose, `services.${service}.ports`, [])
     let labels = _.get(compose, `services.${service}.labels`, [])
     let conflictingPorts = []
 
-    // Get the conflicting ports (all ports)
-    conflictingPorts = _.filter(ports, () => {
-      return true
+    // Get any conflicting ports
+    conflictingPorts = _.filter(ports, port => {
+      return _.includes(this.reverseProxy.ports, port)
     })
 
     // Store any conflicting ports as labels
