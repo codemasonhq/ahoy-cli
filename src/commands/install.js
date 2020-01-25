@@ -1,5 +1,5 @@
 const {Command, flags} = require('@oclif/command')
-const compile = require('../util/compile')
+const helpers = require('../util/helpers')
 const download = require('download-git-repo')
 const inquirer = require('inquirer')
 const yaml = require('js-yaml')
@@ -140,7 +140,7 @@ class InstallCommand extends Command {
     })
 
     // Prepare the docker-compose.yml file
-    const dockerCompose = await compile.compileDockerCompose(services).catch(error => {
+    const dockerCompose = await helpers.compileDockerCompose(services).catch(error => {
       this.error(error)
     })
 

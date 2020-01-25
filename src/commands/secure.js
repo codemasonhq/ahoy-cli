@@ -1,7 +1,6 @@
 const {Command, flags} = require('@oclif/command')
-const compile = require('../util/compile')
+const helpers = require('../util/helpers')
 const Haikunator = require('haikunator')
-const child = require('child_process')
 const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const {cli} = require('cli-ux')
@@ -42,7 +41,7 @@ class SecureCommand extends Command {
     // Choose a service
     let service = args.service
     if (!service) {
-      let services = _.get(this.loadComposeFile(composePath), 'services', [])
+      let services = _.get(helpers.loadComposeFile(composePath), 'services', [])
       let responses = await inquirer.prompt([{
         name: 'service',
         message: 'Which service should be secured?',
@@ -97,7 +96,7 @@ class SecureCommand extends Command {
     }
 
     // Remove previous self-signed cert
-    this.runCommand(
+    helpers.runCommand(
       `sudo security delete-certificate -c "${this.certCommonName}" /Library/Keychains/System.keychain`,
     )
 
@@ -107,13 +106,13 @@ class SecureCommand extends Command {
     fs.ensureDirSync(this.caPath())
 
     // Create internal root CA
-    this.runCommand(`openssl req -new -newkey rsa:2048 -days 730 -nodes -x509 \
+    helpers.runCommand(`openssl req -new -newkey rsa:2048 -days 730 -nodes -x509 \
       -subj "/C=/ST=/O=${this.certOrganization}/localityName=/commonName=${this.certCommonName}/organizationalUnitName=Developers/emailAddress=${this.certRootEmail}/" \
       -keyout "${this.caKeyPath}" \
       -out "${this.caPemPath}"`)
 
     // Trust the internal root CA
-    this.runCommand(
+    helpers.runCommand(
       `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${this.caPemPath}"`,
     )
 
@@ -132,16 +131,16 @@ class SecureCommand extends Command {
     cli.action.start(chalk.grey('  Creating trusted certificate for domain'))
 
     // Prepare the certificate config file
-    let config = await compile.compileCertificateConfig(domain)
+    let config = await helpers.compileCertificateConfig(domain)
 
     fs.ensureDirSync(this.certificatesPath(domain))
     fs.writeFileSync(configPath, config, {encoding: 'utf8'})
 
     // Create a private key
-    this.runCommand(`openssl genrsa -out "${keyPath}" 2048`)
+    helpers.runCommand(`openssl genrsa -out "${keyPath}" 2048`)
 
     // Create signing request
-    this.runCommand(`openssl req -new \
+    helpers.runCommand(`openssl req -new \
       -key "${keyPath}" \
       -out "${csrPath}" \
       -subj "/C=/ST=/O=/localityName=/commonName=${domain}/organizationalUnitName=/emailAddress=${domain}@${this.rootDomain}/" \
@@ -153,7 +152,7 @@ class SecureCommand extends Command {
     }
 
     // Create the certificate
-    this.runCommand(`openssl x509 -req -sha256 -days 730 \
+    helpers.runCommand(`openssl x509 -req -sha256 -days 730 \
       -CA "${this.caPemPath}" \
       -CAkey "${this.caKeyPath}" \
       ${caSerialParam} \
@@ -162,7 +161,7 @@ class SecureCommand extends Command {
       -extensions v3_req -extfile "${configPath}"`)
 
     // Trust the certificate
-    this.runCommand(`sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain "${crtPath}"`)
+    helpers.runCommand(`sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain "${crtPath}"`)
 
     cli.action.stop()
   }
@@ -175,7 +174,7 @@ class SecureCommand extends Command {
    * @param domain
    */
   async prepareReverseProxy(composePath, service, domain) {
-    let compose = this.loadComposeFile(composePath)
+    let compose = helpers.loadComposeFile(composePath)
 
     // Add the certs volume to the reverse proxy
     this.reverseProxy.volumes.push(this.certificatesPath(domain) + ':/etc/nginx/certs')
@@ -197,7 +196,7 @@ class SecureCommand extends Command {
 
     // Prepare and update the compose file
     cli.action.start(chalk.grey('  Updating compose file'))
-    compose = await compile.compileDockerCompose(compose.services).catch(error => {
+    compose = await helpers.compileDockerCompose(compose.services).catch(error => {
       this.error(error)
     })
     fs.writeFileSync(composePath, compose, {encoding: 'utf8'})
@@ -295,25 +294,12 @@ class SecureCommand extends Command {
   }
 
   /**
-   * Loads and parses the docker compose file.
-   *
-   * @param composePath
-   */
-  loadComposeFile(composePath) {
-    try {
-      return yaml.safeLoad(fs.readFileSync(composePath, 'utf8'))
-    } catch (error) {
-      this.error('Something went wrong. Could not read docker compose file (' + composePath + ')')
-    }
-  }
-
-  /**
    * Adds a given domain to the system hosts file.
    *
    * @param domain
    */
   addHostsDomain(domain) {
-    this.runCommand(`echo '127.0.0.1 ${domain} # Added by Ahoy (ahoyworld.io)' | sudo tee -a /etc/hosts`)
+    helpers.runCommand(`echo '127.0.0.1 ${domain} # Added by Ahoy (ahoyworld.io)' | sudo tee -a /etc/hosts`)
   }
 
   // removeHostsDomain(domain) {
@@ -325,24 +311,8 @@ class SecureCommand extends Command {
    */
   restartDockerCompose() {
     cli.action.start(chalk.grey('  Restarting docker compose services'))
-    this.runCommand('docker-compose rm --stop --force && docker-compose up -d')
+    helpers.runCommand('docker-compose rm --stop --force && docker-compose up -d')
     cli.action.stop()
-  }
-
-  /**
-   * Run a command
-   *
-   * @param command
-   * @param errorCallback
-   */
-  runCommand(command, errorCallback) {
-    try {
-      return child.execSync(command, {stdio: 'pipe'}).toString()
-    } catch (error) {
-      if (errorCallback) {
-        errorCallback(error)
-      }
-    }
   }
 }
 

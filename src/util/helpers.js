@@ -1,4 +1,5 @@
 const Handlebars = require('handlebars')
+const child = require('child_process')
 const yaml = require('js-yaml')
 const fs = require('fs-extra')
 const path = require('path')
@@ -51,5 +52,34 @@ exports.getTemplateFile = function (templateFile) {
     return fs.readFileSync(templateFile, 'utf8')
   } catch (error) {
     throw error.message || error.toString()
+  }
+}
+
+/**
+ * Loads and parses the docker compose file.
+ *
+ * @param composePath
+ */
+exports.loadComposeFile = function (composePath) {
+  try {
+    return yaml.safeLoad(fs.readFileSync(composePath, 'utf8'))
+  } catch (error) {
+    this.error('Something went wrong. Could not read docker compose file (' + composePath + ')')
+  }
+}
+
+/**
+ * Run a command
+ *
+ * @param command
+ * @param errorCallback
+ */
+exports.runCommand = function (command, errorCallback) {
+  try {
+    return child.execSync(command, {stdio: 'pipe'}).toString()
+  } catch (error) {
+    if (errorCallback) {
+      errorCallback(error)
+    }
   }
 }
