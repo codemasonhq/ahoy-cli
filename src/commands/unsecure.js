@@ -31,28 +31,30 @@ class UnsecureCommand extends Command {
       await this.removeHostsDomain(domain)
     })
 
-    // Revert docker compose ports back to original
-    cli.action.start(chalk.grey('  Restoring ports from backup label'))
-    compose = this.restoreConflictingPortsFromService(compose)
-    cli.action.stop()
+    if (!flags['domain-only']) {
+      // Revert docker compose ports back to original
+      cli.action.start(chalk.grey('  Restoring ports from backup label'))
+      compose = this.restoreConflictingPortsFromService(compose)
+      cli.action.stop()
 
-    // Remove `VIRTUAL_HOST` from services
-    cli.action.start(chalk.grey('  Dropping virtual host from services'))
-    compose = this.removeVirtualHostFromServices(compose)
-    cli.action.stop()
+      // Remove `VIRTUAL_HOST` from services
+      cli.action.start(chalk.grey('  Dropping virtual host from services'))
+      compose = this.removeVirtualHostFromServices(compose)
+      cli.action.stop()
 
-    // Remove proxy service from compose
-    cli.action.start(chalk.grey('  Removing reverse proxy from compose file'))
-    compose = this.removeReverseProxyService(compose)
-    cli.action.stop()
+      // Remove proxy service from compose
+      cli.action.start(chalk.grey('  Removing reverse proxy from compose file'))
+      compose = this.removeReverseProxyService(compose)
+      cli.action.stop()
 
-    // Prepare and update the compose file
-    cli.action.start(chalk.grey('  Updating compose file'))
-    compose = await helpers.compileDockerCompose(compose.services).catch(error => {
-      this.error(error)
-    })
-    fs.writeFileSync(composePath, compose, {encoding: 'utf8'})
-    cli.action.stop()
+      // Prepare and update the compose file
+      cli.action.start(chalk.grey('  Updating compose file'))
+      compose = await helpers.compileDockerCompose(compose.services).catch(error => {
+        this.error(error)
+      })
+      fs.writeFileSync(composePath, compose, {encoding: 'utf8'})
+      cli.action.stop()
+    }
   }
 
   /**
@@ -177,6 +179,10 @@ UnsecureCommand.flags = {
   'docker-compose': flags.string({
     description: 'path to docker-compose.yml file',
     default: 'docker-compose.yml',
+  }),
+  'domain-only': flags.boolean({
+    description: 'removes domain and certificate only, does not update compose file',
+    default: false,
   }),
 }
 
