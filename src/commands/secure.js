@@ -120,6 +120,8 @@ class SecureCommand extends Command {
 
   /**
    * Create and trust self-signed certificate for a domain
+   *
+   * @param domain
    */
   async createCertificate(domain) {
     let keyPath = path.join(this.certificatesPath(domain), domain + '.key')
@@ -180,7 +182,7 @@ class SecureCommand extends Command {
 
     // Insert the nginx proxy
     cli.action.start(chalk.grey('  Adding reverse proxy to compose file'))
-    compose = this.addNginxProxyService(compose)
+    compose = this.addReverseProxyService(compose)
     cli.action.stop()
 
     // Add `VIRTUAL_HOST` to the service
@@ -208,11 +210,11 @@ class SecureCommand extends Command {
   }
 
   /**
-   * Adds the nginx proxy service to the compose file.
+   * Adds the reverse proxy service to the compose file.
    *
    * @param compose
    */
-  addNginxProxyService(compose) {
+  addReverseProxyService(compose) {
     let services = _.get(compose, 'services', {})
     let reverseProxy = this.reverseProxy
 
@@ -300,10 +302,6 @@ class SecureCommand extends Command {
   addHostsDomain(domain) {
     helpers.runCommand(`echo '127.0.0.1 ${domain} # Added by Ahoy (ahoyworld.io)' | sudo tee -a /etc/hosts`)
   }
-
-  // removeHostsDomain(domain) {
-  // sudo sed -i".bak" "/whoami.local/d" /etc/hosts
-  // }
 
   /**
    * Restarts the docker-compose services

@@ -1,8 +1,6 @@
 const {Command, flags} = require('@oclif/command')
 const helpers = require('../util/helpers')
-const inquirer = require('inquirer')
 const {cli} = require('cli-ux')
-const yaml = require('js-yaml')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const _ = require('lodash')
@@ -45,7 +43,7 @@ class UnsecureCommand extends Command {
 
     // Remove proxy service from compose
     cli.action.start(chalk.grey('  Removing reverse proxy from compose file'))
-    compose = this.removeNginxProxyService(compose)
+    compose = this.removeReverseProxyService(compose)
     cli.action.stop()
 
     // Prepare and update the compose file
@@ -161,7 +159,7 @@ class UnsecureCommand extends Command {
    *
    * @param compose
    */
-  removeNginxProxyService(compose) {
+  removeReverseProxyService(compose) {
     delete compose.services['reverse-proxy']
     return compose
   }
