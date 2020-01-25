@@ -1,7 +1,8 @@
-const {Command} = require('@oclif/command')
+const {Command, flags} = require('@oclif/command')
 const compile = require('../util/compile')
 const Haikunator = require('haikunator')
 const child = require('child_process')
+const inquirer = require('inquirer')
 const yaml = require('js-yaml')
 const {cli} = require('cli-ux')
 const chalk = require('chalk')
@@ -32,19 +33,36 @@ class SecureCommand extends Command {
   }
 
   async run() {
-    let service = 'web'
-    let domain = this.generateRandomDomain() + '.local'
-    let composePath = 'docker-compose.yml'
+    const {args} = this.parse(SecureCommand)
+    const {flags} = this.parse(SecureCommand)
+
+    let domain = flags.domain || this.generateRandomDomain() + '.local'
+    let composePath = flags['docker-compose']
+
+    // Choose a service
+    let service = args.service
+    if (!service) {
+      let services = _.get(this.loadComposeFile(composePath), 'services', [])
+      let responses = await inquirer.prompt([{
+        name: 'service',
+        message: 'Which service should be secured?',
+        type: 'list',
+        choices: _.map(services, (service, key) => {
+          return {name: key}
+        }),
+      }])
+      service = responses.service
+    }
 
     this.log(`Securing ${chalk.green('https://' + domain)} to ${chalk.yellow(service)} with a fresh TLS certificate.`)
 
     this.createCa()
-    this.createCertificate(domain)
+    await this.createCertificate(domain)
+    await this.prepareReverseProxy(composePath, service, domain)
 
-    this.prepareReverseProxy(composePath, service, domain)
-
-    // Restart docker compose
-    // this.runCommand(`docker-compose restart -f ${composePath}`)
+    if (!flags['no-restart']) {
+      this.restartDockerCompose(composePath)
+    }
   }
 
   /**
@@ -130,7 +148,7 @@ class SecureCommand extends Command {
       -config "${configPath}"`)
 
     let caSerialParam = `-CAserial '${this.caSrlPath}'`
-    if (fs.existsSync(this.caSrlPath)) {
+    if (!fs.existsSync(this.caSrlPath)) {
       caSerialParam += ' -CAcreateserial'
     }
 
@@ -177,14 +195,12 @@ class SecureCommand extends Command {
     compose = this.removeConflictingPortsFromService(compose, service)
     cli.action.stop()
 
-    // Prepare the docker-compose.yml file
-    compose = compile.compileDockerCompose(compose.services).catch(error => {
+    // Prepare and update the compose file
+    cli.action.start(chalk.grey('  Updating compose file'))
+    compose = await compile.compileDockerCompose(compose.services).catch(error => {
       this.error(error)
     })
-
-    // Save the update docker compose
-    cli.action.start(chalk.grey('  Updating compose file'))
-    fs.writeFileSync(composePath, await compose, {encoding: 'utf8'})
+    fs.writeFileSync(composePath, compose, {encoding: 'utf8'})
     cli.action.stop()
 
     // Add domain to hosts
@@ -305,6 +321,15 @@ class SecureCommand extends Command {
   // }
 
   /**
+   * Restarts the docker-compose services
+   */
+  restartDockerCompose() {
+    cli.action.start(chalk.grey('  Restarting docker compose services'))
+    this.runCommand('docker-compose rm --stop --force && docker-compose up -d')
+    cli.action.stop()
+  }
+
+  /**
    * Run a command
    *
    * @param command
@@ -324,11 +349,23 @@ class SecureCommand extends Command {
 SecureCommand.args = [
   {
     name: 'service',
-    required: false,
     description: 'service to secure',
   },
 ]
 
+SecureCommand.flags = {
+  domain: flags.string({
+    description: 'domain to secure',
+  }),
+  'no-restart': flags.boolean({
+    description: 'disables automatic restart of docker-compose',
+    default: false,
+  }),
+  'docker-compose': flags.string({
+    description: 'path to docker-compose.yml file',
+    default: 'docker-compose.yml',
+  }),
+}
 SecureCommand.description = 'secure a service with https'
 
 module.exports = SecureCommand
