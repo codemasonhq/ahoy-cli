@@ -35,7 +35,8 @@ USAGE
 * [`ahoy plugins:link PLUGIN`](#ahoy-pluginslink-plugin)
 * [`ahoy plugins:uninstall PLUGIN...`](#ahoy-pluginsuninstall-plugin)
 * [`ahoy plugins:update`](#ahoy-pluginsupdate)
-* [`ahoy secure`](#ahoy-secure)
+* [`ahoy secure [SERVICE]`](#ahoy-secure-service)
+* [`ahoy unsecure`](#ahoy-unsecure)
 
 ## `ahoy help [COMMAND]`
 
@@ -189,13 +190,27 @@ OPTIONS
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v1.7.9/src/commands/plugins/update.ts)_
 
-## `ahoy secure`
+## `ahoy secure [SERVICE]`
+
+secure a service with https
+
+```
+USAGE
+  $ ahoy secure [SERVICE]
+
+ARGUMENTS
+  SERVICE  service to secure
+```
+
+_See code: [src/commands/secure.js](https://github.com/codemasonhq/ahoy/blob/v1.0.1/src/commands/secure.js)_
+
+## `ahoy unsecure`
 
 Describe the command here
 
 ```
 USAGE
-  $ ahoy secure
+  $ ahoy unsecure
 
 OPTIONS
   -n, --name=name  name to print
@@ -205,5 +220,5 @@ DESCRIPTION
   Extra documentation goes here
 ```
 
-_See code: [src/commands/secure.js](https://github.com/codemasonhq/ahoy/blob/v1.0.1/src/commands/secure.js)_
+_See code: [src/commands/unsecure.js](https://github.com/codemasonhq/ahoy/blob/v1.0.1/src/commands/unsecure.js)_
 <!-- commandsstop -->
